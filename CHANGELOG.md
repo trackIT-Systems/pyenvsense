@@ -9,6 +9,10 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions CI to run `pytest` on Python 3.11, 3.12, and 3.13 for pushes and pull requests.
+
 ## [2026.9.1] - 2026-09-11
 
 ### Added
