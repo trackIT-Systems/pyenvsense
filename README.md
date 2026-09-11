@@ -1,5 +1,7 @@
 # pyenvsense
 
+[![Tests](https://github.com/trackIT-Systems/pyenvsense/actions/workflows/ci.yml/badge.svg)](https://github.com/trackIT-Systems/pyenvsense/actions/workflows/ci.yml)
+
 Read environmental / ambient sensors (SHT3x, SHT4x, and later families) on autonomous sensor nodes. The same YAML file drives `envsensed` (CSV + MQTT) and the `envsense` CLI, which only uses the hardware section.
 
 Driver libraries for sensor families are **optional extras** (`sensirion-i2c-sht3x`, `sensirion-i2c-sht4x`). Install only the families you have wired up. `paho-mqtt` is always installed with the core package.
