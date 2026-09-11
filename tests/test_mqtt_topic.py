@@ -1,14 +1,34 @@
+import os
+import time
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from pyenvsense.outputs.mqtt import mqtt_topic
 from pyenvsense.reading import flat_payload, local_iso
+
+
+@pytest.fixture
+def berlin_local_tz():
+    previous = os.environ.get("TZ")
+    os.environ["TZ"] = "Europe/Berlin"
+    time.tzset()
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = previous
+        time.tzset()
 
 
 def test_mqtt_topic_format() -> None:
     assert mqtt_topic("node-01", "ambient") == "node-01/envsense/ambient/json"
 
 
+@pytest.mark.usefixtures("berlin_local_tz")
 def test_mqtt_payload_is_flat_without_sensor_id() -> None:
     when = datetime(2026, 6, 1, 9, 10, 21, 994007, tzinfo=timezone(timedelta(hours=2)))
     payload = flat_payload(
@@ -28,6 +48,7 @@ def test_mqtt_payload_is_flat_without_sensor_id() -> None:
     assert "type" not in payload
 
 
+@pytest.mark.usefixtures("berlin_local_tz")
 def test_cli_payload_includes_sensor_id() -> None:
     when = datetime(2026, 6, 1, 9, 10, 21, 994007, tzinfo=timezone(timedelta(hours=2)))
     payload = flat_payload(
@@ -40,6 +61,7 @@ def test_cli_payload_includes_sensor_id() -> None:
     assert payload["_time"] == "2026-06-01 09:10:21.994007+02:00"
 
 
+@pytest.mark.usefixtures("berlin_local_tz")
 def test_local_iso_uses_space_and_offset() -> None:
     when = datetime(2026, 6, 1, 9, 10, 21, 994007, tzinfo=ZoneInfo("Europe/Berlin"))
     assert local_iso(when) == "2026-06-01 09:10:21.994007+02:00"

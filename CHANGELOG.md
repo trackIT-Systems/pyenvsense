@@ -12,6 +12,11 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 ### Added
 
 - GitHub Actions CI to run `pytest` on Python 3.11, 3.12, and 3.13 for pushes and pull requests.
+- CI status badge in the README.
+
+### Fixed
+
+- MQTT `_time` tests pin `Europe/Berlin` so they do not depend on the host timezone (CI is UTC).
 
 ## [2026.9.1] - 2026-09-11
 
