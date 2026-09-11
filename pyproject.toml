@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyenvsense"
+dynamic = ["version"]
+description = "Environmental sensor daemon and CLI for autonomous sensor nodes"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6",
+    "paho-mqtt>=2",
+]
+
+[project.optional-dependencies]
+sht4x = [
+    "sensirion-i2c-sht4x",
+]
+sht3x = [
+    "sensirion-i2c-sht3x",
+]
+dev = [
+    "pytest>=8",
+]
+
+[project.scripts]
+envsense = "pyenvsense.cli:main"
+envsensed = "pyenvsense.daemon:main"
+
+[project.entry-points."pyenvsense.sensors"]
+sht4x = "pyenvsense.sensors.sht4x:Sht4xSensor"
+sht3x = "pyenvsense.sensors.sht3x:Sht3xSensor"
+
+[tool.setuptools.dynamic]
+version = {attr = "pyenvsense.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
