@@ -8,6 +8,13 @@ hardware:
     - id: outside
       type: sht3x
       address: 0x45    # ADDR to VDD
+    # Raspberry Pi onboard (no address / i2c_bus):
+    # - id: soc
+    #   type: rpi_cpu
+    # - id: rp1
+    #   type: rpi_rp1
+    # - id: pmic
+    #   type: rpi_pmic
 
 daemon:
   csv:

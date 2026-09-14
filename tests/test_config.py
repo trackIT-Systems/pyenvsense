@@ -90,6 +90,53 @@ def test_duplicate_ids() -> None:
         parse_config(raw, Path("mem.yml"))
 
 
+def test_rpi_sensors_omit_address() -> None:
+    raw = {
+        "hardware": {
+            "i2c_bus": 1,
+            "sensors": [
+                {"id": "soc", "type": "rpi_cpu"},
+                {"id": "rp1", "type": "rpi_rp1", "interval_s": 10},
+                {"id": "pmic", "type": "rpi_pmic"},
+            ],
+        }
+    }
+    cfg = parse_config(raw, Path("mem.yml"))
+    assert [s.type for s in cfg.sensors] == ["rpi_cpu", "rpi_rp1", "rpi_pmic"]
+    assert all(s.address is None and s.i2c_bus is None for s in cfg.sensors)
+    assert cfg.sensors[1].interval_s == 10
+
+
+def test_rpi_rejects_i2c_fields() -> None:
+    raw = {
+        "hardware": {
+            "sensors": [
+                {"id": "soc", "type": "rpi_cpu", "address": 0x44},
+            ]
+        }
+    }
+    with pytest.raises(ConfigError, match="must not be set"):
+        parse_config(raw, Path("mem.yml"))
+
+
+def test_unknown_type_still_requires_address() -> None:
+    raw = {
+        "hardware": {
+            "sensors": [{"id": "mystery", "type": "not-a-sensor"}]
+        }
+    }
+    with pytest.raises(ConfigError, match="address is required"):
+        parse_config(raw, Path("mem.yml"))
+
+
+def test_sht_still_requires_address() -> None:
+    with pytest.raises(ConfigError, match="address is required"):
+        parse_config(
+            {"hardware": {"sensors": [{"id": "ambient", "type": "sht4x"}]}},
+            Path("mem.yml"),
+        )
+
+
 def test_empty_sensors() -> None:
     with pytest.raises(ConfigError, match="non-empty"):
         parse_config({"hardware": {"sensors": []}}, Path("mem.yml"))

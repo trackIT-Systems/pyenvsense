@@ -15,6 +15,12 @@ class DriverNotInstalledError(EnvsenseError):
         )
 
 
+class SensorUnavailableError(EnvsenseError):
+    def __init__(self, sensor_type: str) -> None:
+        self.sensor_type = sensor_type
+        super().__init__(f"Sensor type '{sensor_type}' is not available on this system")
+
+
 class UnknownSensorTypeError(EnvsenseError):
     def __init__(self, sensor_type: str) -> None:
         self.sensor_type = sensor_type

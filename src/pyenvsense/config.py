@@ -21,8 +21,8 @@ DEFAULT_CSV_PATH = Path("/data")
 class SensorConfig:
     id: str
     type: str
-    address: int
-    i2c_bus: int
+    address: int | None
+    i2c_bus: int | None
     interval_s: float
 
 
@@ -115,17 +115,42 @@ def _parse_sensor(
     sensor_type = item.get("type")
     if not isinstance(sensor_type, str) or not sensor_type.strip():
         raise ConfigError(f"{prefix}.type must be a non-empty string")
-    if "address" not in item:
-        raise ConfigError(f"{prefix}.address is required")
+    sensor_type = sensor_type.strip()
+    interval_s = _parse_positive_float(
+        item.get("interval_s", default_interval), f"{prefix}.interval_s"
+    )
+    if _sensor_requires_i2c(sensor_type):
+        if "address" not in item:
+            raise ConfigError(f"{prefix}.address is required")
+        return SensorConfig(
+            id=sensor_id.strip(),
+            type=sensor_type,
+            address=_parse_address(item["address"], f"{prefix}.address"),
+            i2c_bus=_parse_int(item.get("i2c_bus", default_bus), f"{prefix}.i2c_bus"),
+            interval_s=interval_s,
+        )
+    unexpected = [key for key in ("address", "i2c_bus") if key in item]
+    if unexpected:
+        names = " and ".join(f"{prefix}.{key}" for key in unexpected)
+        raise ConfigError(f"{names} must not be set for type '{sensor_type}'")
     return SensorConfig(
         id=sensor_id.strip(),
-        type=sensor_type.strip(),
-        address=_parse_address(item["address"], f"{prefix}.address"),
-        i2c_bus=_parse_int(item.get("i2c_bus", default_bus), f"{prefix}.i2c_bus"),
-        interval_s=_parse_positive_float(
-            item.get("interval_s", default_interval), f"{prefix}.interval_s"
-        ),
+        type=sensor_type,
+        address=None,
+        i2c_bus=None,
+        interval_s=interval_s,
     )
+
+
+def _sensor_requires_i2c(sensor_type: str) -> bool:
+    from pyenvsense.errors import UnknownSensorTypeError
+    from pyenvsense.sensors.registry import get_sensor_class
+
+    try:
+        cls = get_sensor_class(sensor_type)
+    except UnknownSensorTypeError:
+        return True
+    return bool(getattr(cls, "requires_i2c", True))
 
 
 def _parse_daemon(raw: dict[str, Any]) -> DaemonConfig:

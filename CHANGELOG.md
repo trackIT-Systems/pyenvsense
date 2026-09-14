@@ -9,10 +9,18 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 
 ## [Unreleased]
 
+## [2026.9.2] - 2026-09-14
+
 ### Added
 
+- Raspberry Pi onboard sensors: `rpi_cpu` (SoC temperature), `rpi_rp1` (RP1 temperature and ADC voltages), and `rpi_pmic` (`vcgencmd measure_temp pmic`). These types do not use I2C `address` / `i2c_bus`.
 - GitHub Actions CI to run `pytest` on Python 3.11, 3.12, and 3.13 for pushes and pull requests.
 - CI status badge in the README.
+
+### Changed
+
+- SHT3x and SHT4x readings are rounded to 0.01 °C and 0.01 %RH (datasheet resolution).
+- Example systemd unit renamed to [`systemd/envsense.service`](systemd/envsense.service).
 
 ### Fixed
 

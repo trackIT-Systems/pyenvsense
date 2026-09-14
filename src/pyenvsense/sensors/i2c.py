@@ -38,8 +38,21 @@ def linux_i2c_available() -> bool:
     return True
 
 
+# Datasheet resolution for SHT3x and SHT4x (typical): 0.01 °C, 0.01 %RH.
+SHT_TEMPERATURE_DECIMALS = 2
+SHT_HUMIDITY_DECIMALS = 2
+
+
 def signal_value(signal: Any) -> float:
     return float(getattr(signal, "value", signal))
+
+
+def sht_temperature(signal: Any) -> float:
+    return round(signal_value(signal), SHT_TEMPERATURE_DECIMALS)
+
+
+def sht_humidity(signal: Any) -> float:
+    return round(signal_value(signal), SHT_HUMIDITY_DECIMALS)
 
 
 def _transceiver(bus: int, linux_i2c_transceiver):

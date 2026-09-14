@@ -31,6 +31,9 @@ envsensed = "pyenvsense.daemon:main"
 [project.entry-points."pyenvsense.sensors"]
 sht4x = "pyenvsense.sensors.sht4x:Sht4xSensor"
 sht3x = "pyenvsense.sensors.sht3x:Sht3xSensor"
+rpi_cpu = "pyenvsense.sensors.rpi:RpiCpuSensor"
+rpi_rp1 = "pyenvsense.sensors.rpi:RpiRp1Sensor"
+rpi_pmic = "pyenvsense.sensors.rpi:RpiPmicSensor"
 
 [tool.setuptools.dynamic]
 version = {attr = "pyenvsense.__version__"}

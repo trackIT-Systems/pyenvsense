@@ -5,6 +5,10 @@ from datetime import datetime, timezone
 KNOWN_FIELD_KEYS = {
     "temperature": "Temperature (°C)",
     "humidity": "Humidity (%)",
+    "in1": "In1 (V)",
+    "in2": "In2 (V)",
+    "in3": "In3 (V)",
+    "in4": "In4 (V)",
 }
 
 

@@ -2,9 +2,9 @@
 
 [![Tests](https://github.com/trackIT-Systems/pyenvsense/actions/workflows/ci.yml/badge.svg)](https://github.com/trackIT-Systems/pyenvsense/actions/workflows/ci.yml)
 
-Read environmental / ambient sensors (SHT3x, SHT4x, and later families) on autonomous sensor nodes. The same YAML file drives `envsensed` (CSV + MQTT) and the `envsense` CLI, which only uses the hardware section.
+Read environmental / ambient sensors (SHT3x, SHT4x) and Raspberry Pi onboard sources (`rpi_cpu`, `rpi_rp1`, `rpi_pmic`) on autonomous sensor nodes. The same YAML file drives `envsensed` (CSV + MQTT) and the `envsense` CLI, which only uses the hardware section.
 
-Driver libraries for sensor families are **optional extras** (`sensirion-i2c-sht3x`, `sensirion-i2c-sht4x`). Install only the families you have wired up. `paho-mqtt` is always installed with the core package.
+Driver libraries for I2C families are **optional extras** (`sensirion-i2c-sht3x`, `sensirion-i2c-sht4x`). Install only the families you have wired up. Onboard Raspberry Pi types are part of the core package. `paho-mqtt` is always installed with the core package.
 
 ## Install
 
@@ -43,6 +43,12 @@ hardware:
     - id: outside
       type: sht3x
       address: 0x45    # ADDR to VDD
+    - id: soc
+      type: rpi_cpu
+    - id: rp1
+      type: rpi_rp1
+    - id: pmic
+      type: rpi_pmic
 
 daemon:
   csv:
@@ -55,7 +61,7 @@ daemon:
     qos: 0
 ```
 
-`envsense list` and `envsense read` ignore the `daemon` section. MQTT topic is `{hostname}/envsense/{sensor_id}/json`. The JSON body is flat: `_time` (local ISO, e.g. `2026-06-01 09:10:21.994007+02:00`), `Temperature (°C)`, and `Humidity (%)`. MQTT omits `sensor_id` (it is in the topic); `envsense read` includes it.
+`envsense list` and `envsense read` ignore the `daemon` section. MQTT topic is `{hostname}/envsense/{sensor_id}/json`. The JSON body is flat: `_time` (local ISO, e.g. `2026-06-01 09:10:21.994007+02:00`), `Temperature (°C)`, and `Humidity (%)` (SHT). `rpi_rp1` also includes `In1 (V)`–`In4 (V)` when those ADC channels exist. MQTT omits `sensor_id` (it is in the topic); `envsense read` includes it.
 
 CSV files are created under `daemon.csv.path` (default `/data`) as `<hostname>/envsense/<hostname>_<timestamp>-envsense.csv`, with a UTC timestamp like `2026-09-11T125654`. The directories are created if they are missing. Each daemon start opens a new file.
 
@@ -68,14 +74,14 @@ envsensed
 envsense --config ./config/envsense.yml list
 ```
 
-`envsense list` shows id, type, resolved I2C bus, address, interval, and whether the extra is installed. `envsense read` prints a JSON array of flat readings to stdout. `envsensed` is the long-running daemon.
+`envsense list` shows id, type, I2C bus, address, interval, and whether the driver is available. Non-I2C types (`rpi_cpu`, `rpi_rp1`, `rpi_pmic`) show `-` for bus and address. `envsense read` prints a JSON array of flat readings to stdout. `envsensed` is the long-running daemon.
 
 ## systemd
 
-An example unit is in [`systemd/pyenvsense.service`](systemd/pyenvsense.service). It starts `envsensed` with the default config path. Adjust `ExecStart` if the console script is not on `PATH`.
+An example unit is in [`systemd/envsense.service`](systemd/envsense.service). It starts `envsensed` with the default config path. Adjust `ExecStart` if the console script is not on `PATH`.
 
 ```bash
-sudo cp systemd/pyenvsense.service /etc/systemd/system/
+sudo cp systemd/envsense.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now pyenvsense
 ```
@@ -89,7 +95,7 @@ Register an entry point in `pyproject.toml`:
 myfamily = "mypkg.sensors:MySensor"
 ```
 
-The class should accept a `SensorConfig`, implement `read()`, set `extra` to the pip extra name, and provide `driver_available()`.
+The class should accept a `SensorConfig`, implement `read()`, set `extra` to the pip extra name (empty string if the driver is built in), set `requires_i2c = False` when `address` is not used, and provide `driver_available()`.
 
 ## Versioning
 

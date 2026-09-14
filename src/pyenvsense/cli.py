@@ -62,12 +62,14 @@ def cmd_list(config: AppConfig) -> int:
             driver = "yes"
         else:
             driver = "missing"
+        bus = "-" if sensor.i2c_bus is None else str(sensor.i2c_bus)
+        addr = "-" if sensor.address is None else f"0x{sensor.address:02x}"
         rows.append(
             (
                 sensor.id,
                 sensor.type,
-                str(sensor.i2c_bus),
-                f"0x{sensor.address:02x}",
+                bus,
+                addr,
                 str(sensor.interval_s),
                 driver,
             )

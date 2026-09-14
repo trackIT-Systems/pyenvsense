@@ -27,6 +27,7 @@ class Sensor(Protocol):
 
 class BaseSensor:
     extra: str = ""
+    requires_i2c: bool = True
 
     def __init__(self, config: SensorConfig) -> None:
         self.config = config

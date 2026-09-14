@@ -3,7 +3,7 @@ from __future__ import annotations
 from pyenvsense.config import SensorConfig
 from pyenvsense.errors import DriverNotInstalledError
 from pyenvsense.sensors.base import BaseSensor, Measurement
-from pyenvsense.sensors.i2c import linux_i2c_available, open_sht_channel, signal_value
+from pyenvsense.sensors.i2c import linux_i2c_available, open_sht_channel, sht_humidity, sht_temperature
 
 
 class Sht3xSensor(BaseSensor):
@@ -16,6 +16,8 @@ class Sht3xSensor(BaseSensor):
             from sensirion_i2c_sht3x.device import Sht3xDevice
         except ImportError as exc:
             raise DriverNotInstalledError(self.extra) from exc
+        assert config.i2c_bus is not None
+        assert config.address is not None
         channel = open_sht_channel(config.i2c_bus, config.address, self.extra)
         self._repeatability = Repeatability.HIGH
         self._device = Sht3xDevice(channel)
@@ -25,8 +27,8 @@ class Sht3xSensor(BaseSensor):
             self._repeatability, False
         )
         return {
-            "temperature": Measurement(signal_value(temperature), "C"),
-            "humidity": Measurement(signal_value(humidity), "%"),
+            "temperature": Measurement(sht_temperature(temperature), "C"),
+            "humidity": Measurement(sht_humidity(humidity), "%"),
         }
 
     @classmethod
