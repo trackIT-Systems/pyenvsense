@@ -124,8 +124,16 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Config file (default: /boot/firmware/envsense.yml)",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="More output: -v for INFO, -vv for DEBUG (default: WARNING)",
+    )
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, handlers=[log_handler("envsensed")])
+    level = {0: logging.WARNING, 1: logging.INFO}.get(args.verbose, logging.DEBUG)
+    logging.basicConfig(level=level, handlers=[log_handler("envsensed")])
     try:
         run_daemon(load_config(args.config))
     except EnvsenseError as exc:

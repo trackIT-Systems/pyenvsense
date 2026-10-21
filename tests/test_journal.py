@@ -52,6 +52,16 @@ def journal():
         server.close()
 
 
+@pytest.fixture(autouse=True)
+def close_handlers():
+    """Close the handlers make_logger installed, so their sockets do not leak."""
+    yield
+    logger = logging.getLogger("test.journal")
+    for handler in logger.handlers:
+        handler.close()
+    logger.handlers.clear()
+
+
 def make_logger(handler: logging.Handler, formatted: bool = True) -> logging.Logger:
     if formatted:
         handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))

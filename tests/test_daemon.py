@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -87,3 +88,21 @@ def test_envsensed_help(capsys) -> None:
     assert "envsensed" in out
     assert "--config" in out
 
+
+
+@pytest.mark.parametrize(
+    ("args", "level"),
+    [([], logging.WARNING), (["-v"], logging.INFO), (["-vv"], logging.DEBUG)],
+)
+def test_envsensed_log_level(monkeypatch, args, level) -> None:
+    import pyenvsense.daemon as daemon
+
+    seen = {}
+    monkeypatch.setattr(daemon.logging, "basicConfig", lambda **kwargs: seen.update(kwargs))
+    monkeypatch.setattr(daemon, "load_config", lambda path: None)
+    monkeypatch.setattr(daemon, "run_daemon", lambda config: None)
+
+    assert main(args) == 0
+    assert seen["level"] == level
+    for handler in seen["handlers"]:
+        handler.close()

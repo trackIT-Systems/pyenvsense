@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 
 ### Changed
 
+- `envsensed` logs at WARNING by default (was always INFO, logging every reading); `-v` gives INFO, `-vv` DEBUG.
 - Under systemd, `envsensed` and `envsense` log to the journal over its native protocol, with the syslog priority, `SYSLOG_IDENTIFIER` (`envsensed` for the daemon) and `CODE_FILE` / `CODE_LINE` / `CODE_FUNC`. Previously every line was stored as `info`. On a terminal they still log to stderr.
 
 ## [2026.9.2] - 2026-09-14
