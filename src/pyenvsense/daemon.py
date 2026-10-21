@@ -13,6 +13,7 @@ from pathlib import Path
 from pyenvsense import __version__
 from pyenvsense.config import AppConfig, load_config
 from pyenvsense.errors import EnvsenseError
+from pyenvsense.journal import log_handler
 from pyenvsense.outputs import Output
 from pyenvsense.outputs.csv import CsvOutput, csv_session_path
 from pyenvsense.outputs.mqtt import MqttOutput
@@ -124,11 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Config file (default: /boot/firmware/envsense.yml)",
     )
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s %(name)s: %(message)s",
-        stream=sys.stderr,
-    )
+    logging.basicConfig(level=logging.INFO, handlers=[log_handler("envsensed")])
     try:
         run_daemon(load_config(args.config))
     except EnvsenseError as exc:

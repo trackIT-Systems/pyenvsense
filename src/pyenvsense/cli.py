@@ -10,6 +10,7 @@ from pathlib import Path
 from pyenvsense import __version__
 from pyenvsense.config import AppConfig, load_config
 from pyenvsense.errors import EnvsenseError, UnknownSensorTypeError
+from pyenvsense.journal import log_handler
 from pyenvsense.reading import fields_from_measurements, flat_payload
 from pyenvsense.sensors.registry import create_sensor, driver_available, get_sensor_class
 
@@ -36,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("read", help="Read all configured sensors once")
 
     args = parser.parse_args(argv)
-    _configure_logging()
+    _configure_logging(parser.prog)
     try:
         config = load_config(args.config)
         if args.command == "list":
@@ -92,12 +93,8 @@ def cmd_read(config: AppConfig) -> int:
     return 0
 
 
-def _configure_logging() -> None:
-    logging.basicConfig(
-        level=logging.WARNING,
-        format="%(levelname)s %(name)s: %(message)s",
-        stream=sys.stderr,
-    )
+def _configure_logging(identifier: str) -> None:
+    logging.basicConfig(level=logging.WARNING, handlers=[log_handler(identifier)])
 
 
 if __name__ == "__main__":
