@@ -14,6 +14,8 @@ from pyenvsense.journal import log_handler
 from pyenvsense.reading import fields_from_measurements, flat_payload
 from pyenvsense.sensors.registry import create_sensor, driver_available, get_sensor_class
 
+log = logging.getLogger(__name__)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_list(config)
         return cmd_read(config)
     except EnvsenseError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        log.error("Cannot run envsense %s: %s", args.command, exc)
         return 1
 
 

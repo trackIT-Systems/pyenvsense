@@ -13,6 +13,10 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 
 - `envsensed` logs at WARNING by default (was always INFO, logging every reading); `-v` gives INFO, `-vv` DEBUG.
 - Under systemd, `envsensed` and `envsense` log to the journal over its native protocol, with the syslog priority, `SYSLOG_IDENTIFIER` (`envsensed` for the daemon) and `CODE_FILE` / `CODE_LINE` / `CODE_FUNC`. Previously every line was stored as `info`. On a terminal they still log to stderr.
+- `envsensed` logs changes of state, not every reading: a sensor or output that keeps failing is logged once at ERROR (exception type and text) when it starts failing, again only when the error changes, and once at INFO when it works again (`Sensor inside (sht3x) works again`). Repeats and tracebacks go to DEBUG, and so does each reading (was INFO).
+- `envsensed` logs connecting to the MQTT broker at INFO, a lost connection at WARNING and reconnecting at INFO.
+- Fatal errors of `envsensed` (CRITICAL) and `envsense` (ERROR) go through logging, and so reach the journal with their priority, instead of `print()` to stderr.
+- Loggers are named after their module (`pyenvsense.daemon`, was `envsensed`), and messages follow the tsOS logging convention (capitalized, one sentence, e.g. `Writing CSV to …`).
 
 ## [2026.9.2] - 2026-09-14
 

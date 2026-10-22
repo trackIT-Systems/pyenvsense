@@ -65,3 +65,21 @@ def test_envsense_help_lists_cli_commands(capsys) -> None:
     assert "read" in out
     assert "daemon" not in out
     assert "envsense" in out
+
+
+def test_envsense_logs_error(monkeypatch, caplog, capsys) -> None:
+    import logging
+
+    from pyenvsense import cli
+    from pyenvsense.errors import EnvsenseError
+
+    def fail(path):
+        raise EnvsenseError("config file /x.yml not found")
+
+    monkeypatch.setattr(cli, "_configure_logging", lambda identifier: None)
+    monkeypatch.setattr(cli, "load_config", fail)
+
+    assert main(["list"]) == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Cannot run envsense list: config file /x.yml not found"]
+    assert capsys.readouterr().out == ""

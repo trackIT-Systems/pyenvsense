@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import logging
 import signal
-import sys
 import threading
 import time
 from collections.abc import Callable, Sequence
@@ -21,19 +20,19 @@ from pyenvsense.reading import fields_from_measurements
 from pyenvsense.sensors.base import Sensor
 from pyenvsense.sensors.registry import create_sensor
 
-log = logging.getLogger("envsensed")
+log = logging.getLogger(__name__)
 
 
 def build_outputs(config: AppConfig) -> list[Output]:
     outputs: list[Output] = []
     if config.daemon.csv.enabled:
         csv_path = csv_session_path(config.daemon.csv.path)
-        log.info("csv file %s", csv_path)
+        log.info("Writing CSV to %s", csv_path)
         outputs.append(CsvOutput(csv_path))
     if config.daemon.mqtt.enabled:
         outputs.append(MqttOutput(config.daemon.mqtt))
     if not outputs:
-        log.warning("No outputs enabled; readings will only be logged")
+        log.warning("No outputs enabled, readings are only logged at DEBUG")
     return outputs
 
 
@@ -65,12 +64,13 @@ def run_daemon(
 
     sleep_fn = sleep if sleep is not None else (lambda seconds: stop.wait(seconds))
     due_at = {sensor.id: monotonic() for sensor in devices}
+    failures = Failures()
 
     log.info(
-        "daemon started; %s sensor(s), csv=%s mqtt=%s",
+        "Started with %s sensor(s), CSV %s, MQTT %s",
         len(devices),
-        config.daemon.csv.enabled,
-        config.daemon.mqtt.enabled,
+        "on" if config.daemon.csv.enabled else "off",
+        "on" if config.daemon.mqtt.enabled else "off",
     )
 
     try:
@@ -79,7 +79,7 @@ def run_daemon(
             due = [sensor for sensor in devices if due_at[sensor.id] <= now]
             if due:
                 for sensor in due:
-                    _read_and_emit(sensor, sinks)
+                    _read_and_emit(sensor, sinks, failures)
                     due_at[sensor.id] = now + sensor.interval_s
                 continue
             wait_s = min(due_at[sensor.id] for sensor in devices) - now
@@ -88,23 +88,48 @@ def run_daemon(
     finally:
         for sink in sinks:
             sink.close()
-        log.info("daemon stopped")
+        log.info("Stopped")
 
 
-def _read_and_emit(sensor: Sensor, outputs: Sequence[Output]) -> None:
+class Failures:
+    """What is failing, so a failure is logged when it starts, changes and ends, not on every repeat."""
+
+    def __init__(self) -> None:
+        self._errors: dict[str, str] = {}
+
+    def failed(self, what: str, error: Exception) -> None:
+        message = f"{type(error).__name__}: {error}"
+        if self._errors.get(what) != message:
+            log.error("%s failed: %s", what, message)
+        else:
+            log.debug("%s failed again: %s", what, message)
+        log.debug("%s traceback", what, exc_info=error)
+        self._errors[what] = message
+
+    def succeeded(self, what: str) -> None:
+        if self._errors.pop(what, None) is not None:
+            log.info("%s works again", what)
+
+
+def _read_and_emit(sensor: Sensor, outputs: Sequence[Output], failures: Failures) -> None:
     when = datetime.now().astimezone()
+    reading = f"Sensor {sensor.id} ({sensor.type})"
     try:
         measurements = sensor.read()
-    except Exception:
-        log.exception("read failed for sensor %s (%s)", sensor.id, sensor.type)
+    except Exception as exc:  # noqa: BLE001 - a failing sensor must not stop the others
+        failures.failed(reading, exc)
         return
+    failures.succeeded(reading)
     fields = fields_from_measurements(measurements)
-    log.info("read %s: %s", sensor.id, fields)
+    log.debug("Read sensor %s: %s", sensor.id, fields)
     for output in outputs:
+        emitting = f"Output {type(output).__name__} for sensor {sensor.id}"
         try:
             output.emit(sensor.id, sensor.type, when, fields)
-        except Exception:
-            log.exception("output %s failed for sensor %s", type(output).__name__, sensor.id)
+        except Exception as exc:  # noqa: BLE001 - a failing output must not stop the others
+            failures.failed(emitting, exc)
+        else:
+            failures.succeeded(emitting)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -137,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         run_daemon(load_config(args.config))
     except EnvsenseError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        log.critical("Cannot run envsensed: %s", exc)
         return 1
     return 0
 
