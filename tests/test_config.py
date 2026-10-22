@@ -137,9 +137,15 @@ def test_sht_still_requires_address() -> None:
         )
 
 
-def test_empty_sensors() -> None:
-    with pytest.raises(ConfigError, match="non-empty"):
-        parse_config({"hardware": {"sensors": []}}, Path("mem.yml"))
+@pytest.mark.parametrize("sensors", [[], None])
+def test_no_sensors(sensors: list | None) -> None:
+    cfg = parse_config({"hardware": {"sensors": sensors}}, Path("mem.yml"))
+    assert cfg.sensors == ()
+
+
+def test_sensors_must_be_list() -> None:
+    with pytest.raises(ConfigError, match="must be a list"):
+        parse_config({"hardware": {"sensors": {"id": "soc"}}}, Path("mem.yml"))
 
 
 def test_load_yaml_file(tmp_path: Path) -> None:

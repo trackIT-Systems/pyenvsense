@@ -81,8 +81,11 @@ def parse_config(raw: dict[str, Any], path: Path) -> AppConfig:
         hardware.get("interval_s", DEFAULT_INTERVAL_S), "hardware.interval_s"
     )
     sensors_raw = hardware.get("sensors")
-    if not isinstance(sensors_raw, list) or not sensors_raw:
-        raise ConfigError("hardware.sensors must be a non-empty list")
+    # A key with every entry commented out is null: no sensors, like []
+    if sensors_raw is None:
+        sensors_raw = []
+    if not isinstance(sensors_raw, list):
+        raise ConfigError("hardware.sensors must be a list")
 
     sensors: list[SensorConfig] = []
     seen_ids: set[str] = set()

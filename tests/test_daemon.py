@@ -226,3 +226,16 @@ def test_envsensed_logs_fatal_error(monkeypatch, caplog, capsys) -> None:
     assert main([]) == 1
     assert _records(caplog, logging.CRITICAL) == ["Cannot run envsensed: config file /x.yml not found"]
     assert capsys.readouterr().err == ""
+
+
+def test_envsensed_without_sensors_exits_cleanly(monkeypatch, tmp_path, caplog) -> None:
+    from pyenvsense import daemon
+
+    path = tmp_path / "envsense.yml"
+    path.write_text("hardware:\n  sensors: []\ndaemon:\n  csv:\n    path: " + str(tmp_path) + "\n", encoding="utf-8")
+    monkeypatch.setattr(daemon.logging, "basicConfig", lambda **kwargs: None)
+    caplog.set_level(logging.INFO, logger="pyenvsense.daemon")
+
+    assert main(["--config", str(path)]) == 0
+    assert _records(caplog, logging.INFO) == [f"No sensors configured in {path}, exiting"]
+    assert list(tmp_path.iterdir()) == [path]

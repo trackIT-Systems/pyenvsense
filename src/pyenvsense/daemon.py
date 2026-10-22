@@ -51,7 +51,9 @@ def run_daemon(
 ) -> None:
     devices = list(sensors) if sensors is not None else build_sensors(config)
     if not devices:
-        raise ValueError("no sensors configured")
+        # Before build_outputs, so no empty CSV file is created
+        log.info("No sensors configured in %s, exiting", config.path)
+        return
     sinks = list(outputs) if outputs is not None else build_outputs(config)
     stop = threading.Event()
 

@@ -61,6 +61,8 @@ daemon:
     qos: 0
 ```
 
+`sensors` may be empty (`[]`, or the key with every entry commented out). `envsensed` then logs that at INFO and exits with status 0, so a systemd unit with `Restart=on-failure` stays stopped instead of restarting.
+
 `envsense list` and `envsense read` ignore the `daemon` section. MQTT topic is `{hostname}/envsense/{sensor_id}/json`. The JSON body is flat: `_time` (local ISO, e.g. `2026-06-01 09:10:21.994007+02:00`), `Temperature (°C)`, and `Humidity (%)` (SHT). `rpi_rp1` also includes `In1 (V)`–`In4 (V)` when those ADC channels exist. MQTT omits `sensor_id` (it is in the topic); `envsense read` includes it.
 
 CSV files are created under `daemon.csv.path` (default `/data`) as `<hostname>/envsense/<hostname>_<timestamp>-envsense.csv`, with a UTC timestamp like `2026-09-11T125654`. The directories are created if they are missing. Each daemon start opens a new file.

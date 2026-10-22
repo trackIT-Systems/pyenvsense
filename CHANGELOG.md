@@ -11,6 +11,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/)
 
 ### Changed
 
+- `hardware.sensors` may be empty (`[]` or null). `envsensed` then logs `No sensors configured in …, exiting` at INFO and exits with status 0, before opening a CSV file. An empty list was a config error (exit 1), so a unit with `Restart=on-failure` restarted forever.
+
 - `envsensed` logs at WARNING by default (was always INFO, logging every reading); `-v` gives INFO, `-vv` DEBUG.
 - Under systemd, `envsensed` and `envsense` log to the journal over its native protocol, with the syslog priority, `SYSLOG_IDENTIFIER` (`envsensed` for the daemon) and `CODE_FILE` / `CODE_LINE` / `CODE_FUNC`. Previously every line was stored as `info`. On a terminal they still log to stderr.
 - `envsensed` logs changes of state, not every reading: a sensor or output that keeps failing is logged once at ERROR (exception type and text) when it starts failing, again only when the error changes, and once at INFO when it works again (`Sensor inside (sht3x) works again`). Repeats and tracebacks go to DEBUG, and so does each reading (was INFO).
